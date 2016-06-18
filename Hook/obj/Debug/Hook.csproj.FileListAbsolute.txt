@@ -1,0 +1,5 @@
+D:\C#\Hook\Hook\bin\Debug\Hook.dll
+D:\C#\Hook\Hook\bin\Debug\Hook.pdb
+D:\C#\Hook\Hook\obj\Debug\Hook.csprojResolveAssemblyReference.cache
+D:\C#\Hook\Hook\obj\Debug\Hook.dll
+D:\C#\Hook\Hook\obj\Debug\Hook.pdb
