@@ -7,7 +7,7 @@ Very simple mouse, keyboard global hooking library written in C#
 ### Hooking
 
 Add `KeyboardHook.HookStart()` or `MouseHook.HookStart()` at starts.
-**All events must return boolean value**. If returned value if false, that event go out.
+**All events must return boolean value**. If returned value is false, that event go out.
 
 ### Simulation
 
