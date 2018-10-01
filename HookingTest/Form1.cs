@@ -21,6 +21,8 @@ namespace HookingTest
             KeyboardHook.KeyUp += KeyboardHook_KeyUp;
             MouseHook.MouseDown += MouseHook_MouseDown;
             MouseHook.MouseUp += MouseHook_MouseUp;
+            // MouseHook.MouseMove += MouseHook_MouseMove;
+            MouseHook.MouseScroll += MouseHook_MouseScroll;
 
             KeyboardHook.HookStart();
             if (!MouseHook.HookStart())
@@ -29,6 +31,12 @@ namespace HookingTest
             }
 
             FormClosing += Form1_FormClosing;
+        }
+
+        private bool MouseHook_MouseMove(MouseEventType type, int x, int y)
+        {
+            AppendText($"MOUSEMOVE: {type} at ({x}, {y})");
+            return true;
         }
 
         private bool KeyboardHook_KeyDown(int vkCode)
@@ -52,6 +60,12 @@ namespace HookingTest
         private bool MouseHook_MouseUp(MouseEventType type, int x, int y)
         {
             AppendText($"MOUSEUP: {type} at ({x}, {y})");
+            return true;
+        }
+
+        private bool MouseHook_MouseScroll(MouseScrollType type)
+        {
+            AppendText($"MOUSESCROLL: {type}");
             return true;
         }
 

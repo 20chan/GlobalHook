@@ -6,7 +6,7 @@ using static Hook.WinAPI;
 namespace Hook
 {
     public delegate bool MouseEventCallback(MouseEventType type, int x, int y);
-    public delegate bool MouseScrollEventCallback(int value);
+    public delegate bool MouseScrollEventCallback(MouseScrollType type);
     public class MouseHook
     {
         private static IntPtr _hookID = IntPtr.Zero;
@@ -15,41 +15,43 @@ namespace Hook
 
         public static event MouseEventCallback MouseDown;
         public static event MouseEventCallback MouseUp;
+        public static event MouseEventCallback MouseMove;
         public static event MouseScrollEventCallback MouseScroll;
         
         private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0 && ((int)wParam == WM_LBUTTONDOWN || (int)wParam == WM_RBUTTONDOWN))
+            int intw = (int)wParam;
+            if (nCode >= 0 && 
+                intw == WM_LBUTTONDOWN || intw == WM_RBUTTONDOWN ||
+                intw == WM_LBUTTONUP || intw == WM_RBUTTONUP ||
+                intw == WM_MOUSEWHEEL || intw == WM_MOUSEMOVE)
             {
                 var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
                 int x = hookStruct.pt.x, y = hookStruct.pt.y;
+                bool res = true;
                 switch ((int)wParam)
                 {
                     case WM_LBUTTONDOWN:
-                        if (MouseDown?.Invoke(MouseEventType.LEFT, x, y) == false) return _hookID;
+                        res = MouseDown?.Invoke(MouseEventType.LEFT, x, y) ?? true;
                         break;
                     case WM_RBUTTONDOWN:
-                        if (MouseDown?.Invoke(MouseEventType.RIGHT, x, y) == false) return _hookID;
+                        res = MouseDown?.Invoke(MouseEventType.RIGHT, x, y) ?? true;
                         break;
-                }
-            }
-            if (nCode >= 0 && ((int)wParam == WM_LBUTTONUP || (int)wParam == WM_RBUTTONUP))
-            {
-                var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
-                int x = hookStruct.pt.x, y = hookStruct.pt.y;
-                switch ((int)wParam)
-                {
                     case WM_LBUTTONUP:
-                        if (MouseUp?.Invoke(MouseEventType.LEFT, x, y) == false) return _hookID;
+                        res = MouseUp?.Invoke(MouseEventType.LEFT, x, y) ?? true;
                         break;
                     case WM_RBUTTONUP:
-                        if (MouseUp?.Invoke(MouseEventType.RIGHT, x, y) == false) return _hookID;
+                        res = MouseUp?.Invoke(MouseEventType.RIGHT, x, y) ?? true;
+                        break;
+                    case WM_MOUSEMOVE:
+                        res = MouseMove?.Invoke(MouseEventType.NONE, x, y) ?? true;
+                        break;
+                    case WM_MOUSEWHEEL:
+                        res = MouseScroll?.Invoke((int)hookStruct.mouseData > 0 ? MouseScrollType.UP : MouseScrollType.DOWN) ?? true;
                         break;
                 }
-            }
-            if(nCode >= 0 && (int)wParam == WM_MOUSEWHEEL)
-            {
-                var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                if (!res)
+                    return (IntPtr)1;
             }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }

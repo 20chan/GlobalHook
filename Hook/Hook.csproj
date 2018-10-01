@@ -40,10 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KeyboardEventType.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="KeyboardHook.cs" />
     <Compile Include="KeyboardSimulation.cs" />
-    <Compile Include="MouseEventType.cs" />
     <Compile Include="MouseHook.cs" />
     <Compile Include="MouseSimulation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
