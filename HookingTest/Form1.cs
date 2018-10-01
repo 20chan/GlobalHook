@@ -13,29 +13,28 @@ namespace HookingTest
 {
     public partial class Form1 : Form
     {
-        KeyboardHook kh;
-        MouseHook mh;
-
         public Form1()
         {
             InitializeComponent();
 
-            kh = new KeyboardHook();
-            mh = new MouseHook();
+            KeyboardHook.KeyDown += Kh_KeyDown;
+            KeyboardHook.KeyUp += Kh_KeyUp;
+            MouseHook.MouseDown += Mh_MouseDown;
+            MouseHook.MouseUp += Mh_MouseUp;
 
-            kh.KeyDown += Kh_KeyDown;
-            kh.KeyUp += Kh_KeyUp;
-            mh.MouseDown += Mh_MouseDown;
-            mh.MouseUp += Mh_MouseUp;
+            KeyboardHook.HookStart();
+            if (!MouseHook.HookStart())
+            {
+                MessageBox.Show("Mouse hook failed");
+            }
 
-            kh.HookStart();
-            mh.HookStart();
+            FormClosing += Form1_FormClosing;
         }
 
-        ~Form1()
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            kh.HookEnd();
-            mh.HookEnd();
+            KeyboardHook.HookEnd();
+            MouseHook.HookEnd();
         }
 
         private bool Mh_MouseUp(MouseEventType arg1, int arg2, int arg3)

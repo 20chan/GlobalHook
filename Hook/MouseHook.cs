@@ -15,10 +15,10 @@ namespace Hook
         private const int WM_RBUTTONDOWN = 0x0204;
         private const int WM_RBUTTONUP = 0x0205;
 
-        private IntPtr _hookID = IntPtr.Zero;
+        private static IntPtr _hookID = IntPtr.Zero;
 
         private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private LowLevelMouseProc _proc;
+        private static LowLevelMouseProc _proc;
         private class API
         {
             [StructLayout(LayoutKind.Sequential)]
@@ -48,16 +48,11 @@ namespace Hook
         }
         #endregion
 
-        public event Func<MouseEventType, int, int, bool> MouseDown;
-        public event Func<MouseEventType, int, int, bool> MouseUp;
-        public event Func<int, bool> MouseScroll;
-
-        public MouseHook()
-        {
-
-        }
-
-        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        public static event Func<MouseEventType, int, int, bool> MouseDown;
+        public static event Func<MouseEventType, int, int, bool> MouseUp;
+        public static event Func<int, bool> MouseScroll;
+        
+        private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode >= 0 && ((int)wParam == WM_LBUTTONDOWN || (int)wParam == WM_RBUTTONDOWN))
             {
@@ -94,19 +89,19 @@ namespace Hook
             return API.CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
 
-        /// <summary>
-        /// 맙소사! .NET 어떤 버젼 이상부터는 WH_MOUSE_LL 후킹이 안된단다. 그래서 SetWindowsHookEX 함수는 0을 리턴해서 콜백자체가 안됨..
-        /// </summary>
-        public void HookStart()
+        public static bool HookStart()
         {
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule)
             {
-                _hookID = API.SetWindowsHookEx(WH_MOUSE_LL, _proc, API.GetModuleHandle(null), 0);
+                var handle = API.GetModuleHandle("user32");
+                _proc = HookCallback;
+                _hookID = API.SetWindowsHookEx(WH_MOUSE_LL, _proc, handle, 0);
+                return _hookID != IntPtr.Zero;
             }
         }
 
-        public void HookEnd()
+        public static void HookEnd()
         {
             API.UnhookWindowsHookEx(_hookID);
         }

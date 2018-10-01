@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace Hook
 {
-    public class KeyboardHook
+    public static class KeyboardHook
     {
         #region WinAPI
         private const int WH_KEYBOARD_LL = 13;
@@ -22,8 +22,8 @@ namespace Hook
             public int dwExtraInfo;
         }
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam);
-        private LowLevelKeyboardProc _proc;
-        private IntPtr _hookID = IntPtr.Zero;
+        private static LowLevelKeyboardProc _proc;
+        private static IntPtr _hookID = IntPtr.Zero;
         private static class API
         {
             [DllImport("user32.dll")]
@@ -36,22 +36,18 @@ namespace Hook
             public static extern IntPtr GetModuleHandle(string lpModuleName);
         }
         #endregion
-        /// <summary>
-        /// 리턴값이 FALSE 이면 키 잠금.
-        /// </summary>
-        public bool IsGetSystemKeyEvent { get; set; }
-        public event Func<Keys, KeyboardEventType, bool> KeyEvented;
+        public static bool IsGetSystemKeyEvent { get; set; } = true;
+        public static event Func<Keys, KeyboardEventType, bool> KeyEvented;
 
-        public event Func<Keys, bool> KeyDown;
-        public event Func<Keys, bool> KeyUp;
+        public static event Func<Keys, bool> KeyDown;
+        public static event Func<Keys, bool> KeyUp;
 
-        public KeyboardHook(bool getSysKeyEvent = true)
+        static KeyboardHook()
         {
             _proc = HookCallback;
-            IsGetSystemKeyEvent = getSysKeyEvent;
         }
         
-        private IntPtr HookCallback(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
+        static IntPtr HookCallback(int nCode, IntPtr wParam, ref KBDLLHOOKSTRUCT lParam)
         {
             if (nCode >= 0)
             {
@@ -75,11 +71,8 @@ namespace Hook
             
             return API.CallNextHookEx(_hookID, nCode, wParam, ref lParam);
         }
-
-        /// <summary>
-        /// 키보드 후킹을 시작합니다.
-        /// </summary>
-        public void HookStart()
+        
+        public static void HookStart()
         {
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule)
@@ -91,7 +84,7 @@ namespace Hook
         /// <summary>
         /// 키보드 후킹을 끝냅니다.
         /// </summary>
-        public void HookEnd()
+        public static void HookEnd()
         {
             API.UnhookWindowsHookEx(_hookID);
         }
