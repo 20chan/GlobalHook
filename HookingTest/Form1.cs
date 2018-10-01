@@ -17,10 +17,10 @@ namespace HookingTest
         {
             InitializeComponent();
 
-            KeyboardHook.KeyDown += Kh_KeyDown;
-            KeyboardHook.KeyUp += Kh_KeyUp;
-            MouseHook.MouseDown += Mh_MouseDown;
-            MouseHook.MouseUp += Mh_MouseUp;
+            KeyboardHook.KeyDown += KeyboardHook_KeyDown;
+            KeyboardHook.KeyUp += KeyboardHook_KeyUp;
+            MouseHook.MouseDown += MouseHook_MouseDown;
+            MouseHook.MouseUp += MouseHook_MouseUp;
 
             KeyboardHook.HookStart();
             if (!MouseHook.HookStart())
@@ -31,34 +31,34 @@ namespace HookingTest
             FormClosing += Form1_FormClosing;
         }
 
+        private bool KeyboardHook_KeyDown(int vkCode)
+        {
+            AppendText($"KEYDOWN : {(Keys)vkCode}");
+            return true;
+        }
+
+        private bool KeyboardHook_KeyUp(int vkCode)
+        {
+            AppendText($"KEYUP : {(Keys)vkCode}");
+            return true;
+        }
+
+        private bool MouseHook_MouseDown(MouseEventType type, int x, int y)
+        {
+            AppendText($"MOUSEDOWN: {type} at ({x}, {y})");
+            return true;
+        }
+
+        private bool MouseHook_MouseUp(MouseEventType type, int x, int y)
+        {
+            AppendText($"MOUSEUP: {type} at ({x}, {y})");
+            return true;
+        }
+
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             KeyboardHook.HookEnd();
             MouseHook.HookEnd();
-        }
-
-        private bool Mh_MouseUp(MouseEventType arg1, int arg2, int arg3)
-        {
-            AppendText("MOUSEUP : " + arg1.ToString() + ", (" + arg2.ToString() + "," + arg3.ToString() + ")");
-            return true;
-        }
-
-        private bool Mh_MouseDown(MouseEventType arg1, int arg2, int arg3)
-        {
-            AppendText("MOUSEDOWN : " + arg1.ToString() + ", (" + arg2.ToString() + "," + arg3.ToString() + ")");
-            return true;
-        }
-
-        private bool Kh_KeyUp(Keys arg)
-        {
-            AppendText("KEYUP : " + arg.ToString());
-            return true;
-        }
-
-        private bool Kh_KeyDown(Keys arg)
-        {
-            AppendText("KEYDOWN : " + arg.ToString());
-            return true;
         }
 
         private void AppendText(string text)
