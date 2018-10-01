@@ -1,92 +1,59 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using static Hook.WinAPI;
 
 namespace Hook
 {
+    public delegate bool MouseEventCallback(MouseEventType type, int x, int y);
+    public delegate bool MouseScrollEventCallback(MouseScrollType type);
     public class MouseHook
     {
-        #region WinAPI
-        private const int WH_MOUSE_LL = 14;
-        private const int WM_LBUTTONDOWN = 0x0201;
-        private const int WM_LBUTTONUP = 0x0202;
-        private const int WM_MOUSEMOVE = 0x0200;
-        private const int WM_MOUSEWHEEL = 0x020A;
-        private const int WM_RBUTTONDOWN = 0x0204;
-        private const int WM_RBUTTONUP = 0x0205;
-
         private static IntPtr _hookID = IntPtr.Zero;
 
-        private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private static LowLevelMouseProc _proc;
-        private class API
-        {
-            [StructLayout(LayoutKind.Sequential)]
-            public struct POINT
-            {
-                public int x;
-                public int y;
-            }
-            [StructLayout(LayoutKind.Sequential)]
-            public struct MSLLHOOKSTRUCT
-            {
-                public POINT pt;
-                public uint mouseData;
-                public uint flags;
-                public uint time;
-                public IntPtr dwExtraInfo;
-            }
+        private static LowLevelProc _proc;
 
-            [DllImport("user32.dll")]
-            public static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
-            [DllImport("user32.dll")]
-            public static extern bool UnhookWindowsHookEx(IntPtr hhk);
-            [DllImport("user32.dll")]
-            public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-            [DllImport("kernel32.dll")]
-            public static extern IntPtr GetModuleHandle(string lpModuleName);
-        }
-        #endregion
-
-        public static event Func<MouseEventType, int, int, bool> MouseDown;
-        public static event Func<MouseEventType, int, int, bool> MouseUp;
-        public static event Func<int, bool> MouseScroll;
+        public static event MouseEventCallback MouseDown;
+        public static event MouseEventCallback MouseUp;
+        public static event MouseEventCallback MouseMove;
+        public static event MouseScrollEventCallback MouseScroll;
         
         private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            if (nCode >= 0 && ((int)wParam == WM_LBUTTONDOWN || (int)wParam == WM_RBUTTONDOWN))
+            int intw = (int)wParam;
+            if (nCode >= 0 && 
+                intw == WM_LBUTTONDOWN || intw == WM_RBUTTONDOWN ||
+                intw == WM_LBUTTONUP || intw == WM_RBUTTONUP ||
+                intw == WM_MOUSEWHEEL || intw == WM_MOUSEMOVE)
             {
-                API.MSLLHOOKSTRUCT hookStruct = (API.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(API.MSLLHOOKSTRUCT));
+                var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
                 int x = hookStruct.pt.x, y = hookStruct.pt.y;
+                bool res = true;
                 switch ((int)wParam)
                 {
                     case WM_LBUTTONDOWN:
-                        if (MouseDown?.Invoke(MouseEventType.LEFT, x, y) == false) return _hookID;
+                        res = MouseDown?.Invoke(MouseEventType.LEFT, x, y) ?? true;
                         break;
                     case WM_RBUTTONDOWN:
-                        if (MouseDown?.Invoke(MouseEventType.RIGHT, x, y) == false) return _hookID;
+                        res = MouseDown?.Invoke(MouseEventType.RIGHT, x, y) ?? true;
                         break;
-                }
-            }
-            if (nCode >= 0 && ((int)wParam == WM_LBUTTONUP || (int)wParam == WM_RBUTTONUP))
-            {
-                API.MSLLHOOKSTRUCT hookStruct = (API.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(API.MSLLHOOKSTRUCT));
-                int x = hookStruct.pt.x, y = hookStruct.pt.y;
-                switch ((int)wParam)
-                {
                     case WM_LBUTTONUP:
-                        if (MouseUp?.Invoke(MouseEventType.LEFT, x, y) == false) return _hookID;
+                        res = MouseUp?.Invoke(MouseEventType.LEFT, x, y) ?? true;
                         break;
                     case WM_RBUTTONUP:
-                        if (MouseUp?.Invoke(MouseEventType.RIGHT, x, y) == false) return _hookID;
+                        res = MouseUp?.Invoke(MouseEventType.RIGHT, x, y) ?? true;
+                        break;
+                    case WM_MOUSEMOVE:
+                        res = MouseMove?.Invoke(MouseEventType.NONE, x, y) ?? true;
+                        break;
+                    case WM_MOUSEWHEEL:
+                        res = MouseScroll?.Invoke((int)hookStruct.mouseData > 0 ? MouseScrollType.UP : MouseScrollType.DOWN) ?? true;
                         break;
                 }
+                if (!res)
+                    return (IntPtr)1;
             }
-            if(nCode >= 0 && (int)wParam == WM_MOUSEWHEEL)
-            {
-                API.MSLLHOOKSTRUCT hookStruct = (API.MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(API.MSLLHOOKSTRUCT));
-            }
-            return API.CallNextHookEx(_hookID, nCode, wParam, lParam);
+            return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
 
         public static bool HookStart()
@@ -94,16 +61,16 @@ namespace Hook
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule)
             {
-                var handle = API.GetModuleHandle("user32");
+                var handle = GetModuleHandle("user32");
                 _proc = HookCallback;
-                _hookID = API.SetWindowsHookEx(WH_MOUSE_LL, _proc, handle, 0);
+                _hookID = SetWindowsHookEx(WH_MOUSE_LL, _proc, handle, 0);
                 return _hookID != IntPtr.Zero;
             }
         }
 
         public static void HookEnd()
         {
-            API.UnhookWindowsHookEx(_hookID);
+            UnhookWindowsHookEx(_hookID);
         }
     }
 }
