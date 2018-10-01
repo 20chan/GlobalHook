@@ -60,6 +60,8 @@ namespace Hook
         public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
         [DllImport("kernel32.dll")]
         internal static extern IntPtr GetModuleHandle(string lpModuleName);
+        [DllImport("User32.dll")]
+        public static extern void keybd_event(uint vk, uint scan, uint flags, uint extraInfo);
         #endregion
     }
 }
