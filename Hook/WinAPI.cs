@@ -19,6 +19,14 @@ namespace Hook
         internal const int WM_KEYUP = 0x101;
         internal const int WM_SYSTEMKEYUP = 0x0105;
         internal const int WM_SYSKEYDOWN = 0x104;
+
+        public const uint LBDOWN = 0x00000002;
+        public const uint LBUP = 0x00000004;
+        public const uint RBDOWN = 0x00000008;
+        public const uint RBUP = 0x000000010;
+        public const uint MBDOWN = 0x00000020;
+        public const uint MBUP = 0x000000040;
+        public const uint WHEEL = 0x00000800;
         #endregion
 
         #region struct
@@ -62,6 +70,10 @@ namespace Hook
         internal static extern IntPtr GetModuleHandle(string lpModuleName);
         [DllImport("User32.dll")]
         public static extern void keybd_event(uint vk, uint scan, uint flags, uint extraInfo);
+        [DllImport("user32.dll")]
+        public static extern void mouse_event(uint dwFlags, uint dx, uint dy, int dwData, int dwExtraInfo);
+        [DllImport("user32.dll")]
+        public static extern int SetCursorPos(int x, int y);
         #endregion
     }
 }
